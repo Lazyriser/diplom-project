@@ -1,0 +1,17 @@
+# Laravel
+/vendor
+/node_modules
+/.env
+/public/hot
+/public/storage
+/storage/*.key
+/.idea
+/.vscode
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Другие временные файлы
+*.log
+*.tmp
