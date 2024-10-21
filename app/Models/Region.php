@@ -9,9 +9,8 @@ class Region extends Model
 {
 	use HasFactory;
 
-	protected $fillable = ['name'];
+	protected $fillable = ['api_id', 'name', 'parent_id'];
 
-	// Определение отношения с моделью Job
 	public function jobs()
 	{
 		return $this->hasMany(Job::class);

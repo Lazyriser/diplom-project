@@ -12,14 +12,24 @@ return new class extends Migration {
 	{
 		Schema::create('vacancies', function (Blueprint $table) {
 			$table->id(); // Сначала создаем поле id
-			$table->string('api_id')->nullable()->default(''); // Добавьте значение по умолчанию
+			$table->string('api_id')->unique()->nullable(); // api_id уникально, может быть null
 			$table->string('title');
-			$table->text('description');
-			$table->unsignedBigInteger('region_id')->constrained('regions')->onDelete('cascade');
 			$table->string('company_name')->nullable();
-			$table->decimal('salary', 10, 2)->nullable();
-			$table->enum('employment_type', ['full-time', 'part-time', 'contract'])->nullable();
+			$table->text('description');
+			$table->unsignedBigInteger('region_id'); // Без 'constrained' на данном этапе
+			$table->decimal('salary_from', 10, 2)->nullable();
+			$table->decimal('salary_to', 10, 2)->nullable();
+			$table->string('currency')->nullable();
+			$table->string('address')->nullable();
+			$table->string('experience')->nullable();
+			$table->string('schedule')->nullable();
+			$table->text('key_skills')->nullable();
+			$table->string('employment_type')->nullable();
+			$table->softDeletes();
 			$table->timestamps();
+
+			// Добавление внешнего ключа после создания поля
+			$table->foreign('region_id')->references('id')->on('regions')->onDelete('cascade');
 		});
 	}
 

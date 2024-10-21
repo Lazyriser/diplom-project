@@ -10,8 +10,10 @@ class CreateRegionsTable extends Migration
 	{
 		Schema::create('regions', function (Blueprint $table) {
 			$table->id();
-			$table->string('name'); // Название региона
-			$table->timestamps(); // Поля для created_at и updated_at
+			$table->string('name');
+			$table->string('api_id')->default('0')->unique()->nullable(); // Добавление api_id
+			$table->unsignedBigInteger('parent_id')->nullable(); // Для хранения родительского региона
+			$table->timestamps();
 		});
 	}
 

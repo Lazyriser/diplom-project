@@ -4,33 +4,47 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Job extends Model
 {
-	use HasFactory;
+	use HasFactory, SoftDeletes; // Используем трейты
 
 	protected $fillable = [
-		'api_id', // Это поле должно быть включено
+		'api_id',
 		'title',
 		'description',
 		'region_id',
 		'company_name',
-		'salary',
+		'salary_from',
+		'salary_to',
 		'employment_type',
+		'schedule',
+		'key_skills',
+		'experience',
+		'address',
+		'currency',
+		'deleted_at',
 	];
 
 	protected $table = 'vacancies'; // Явное указание имени таблицы
 
+	// Отношение к модели Region
 	public function region()
 	{
 		return $this->belongsTo(Region::class);
 	}
 
+	// Форматирование зарплаты
 	public function getFormattedSalaryAttribute()
 	{
-		return number_format($this->salary, 0, ',', ' ') . ' руб.'; // Форматирование зарплаты
+		// Если зарплата задана, форматируем ее
+		return $this->salary_from && $this->salary_to
+			? number_format($this->salary_from, 0, ',', ' ') . ' - ' . number_format($this->salary_to, 0, ',', ' ') . ' руб.'
+			: 'Не указана'; // Возвращаем текст, если зарплата не указана
 	}
 
+	// Имя региона
 	public function getRegionNameAttribute()
 	{
 		return $this->region ? $this->region->name : 'Не указан'; // Имя региона
@@ -42,11 +56,19 @@ class Job extends Model
 		return [
 			'api_id' => 'required|string' . ($ignoreApiId ? '|unique:vacancies,api_id,' . $ignoreApiId : '|unique:vacancies,api_id'),
 			'title' => 'required|string|max:255',
-			'description' => 'nullable|string', // Измените на nullable, если нужно
+			'description' => 'nullable|string', // Изменено на 'string' для правильной валидации
 			'region_id' => 'required|exists:regions,id',
-			'company_name' => 'string|max:255|nullable',
-			'salary' => 'numeric|nullable',
-			'employment_type' => 'string|in:full-time,part-time,contract|nullable',
+			'salary_from' => 'nullable|numeric',
+			'salary_to' => 'nullable|numeric|gte:salary_from', // Проверка на диапазон
+			'currency' => 'nullable|string|max:255',
+			'employment_type' => 'nullable|string|in:full-time,part-time,contract',
+			'company_name' => 'nullable|string|max:255',
+			'schedule' => 'nullable|string|max:255',
+			'key_skills' => 'nullable|string',
+			'experience' => 'nullable|string|max:255',
+			'address' => 'nullable|string|max:255',
+			'is_updated' => 'boolean',
+			'deleted_at' => 'nullable|date',
 		];
 	}
 }

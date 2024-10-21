@@ -1,95 +1,186 @@
 <template>
-  <div>
-    <h1>Редактировать вакансию</h1>
-    <form @submit.prevent="updateJob">
-      <!-- Название вакансии -->
-      <div>
-        <label for="title">Название:</label>
-        <input type="text" v-model="form.title" required />
+  <section>
+    <div class="container my-5">
+      <h1>Редактирование вакансии</h1>
+      <form @submit.prevent="updateJob">
+        <div class="mb-3">
+          <label for="title" class="form-label">Название вакансии</label>
+          <input
+            type="text"
+            id="title"
+            class="form-control"
+            v-model="form.title"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="description" class="form-label">Описание</label>
+          <textarea
+            id="description"
+            class="form-control"
+            v-model="form.description"
+            required
+          ></textarea>
+        </div>
+        <div class="mb-3">
+          <label for="region_id" class="form-label">Регион</label>
+          <select
+            id="region_id"
+            class="form-select"
+            v-model="form.region_id"
+            required
+          >
+            <option disabled value="">Выберите регион</option>
+            <option v-for="region in regions" :key="region.id" :value="region.id">
+              {{ region.name }}
+            </option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="company_name" class="form-label">Компания</label>
+          <input
+            type="text"
+            id="company_name"
+            class="form-control"
+            v-model="form.company_name"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="salary_from" class="form-label">Зарплата от</label>
+          <input
+            type="number"
+            id="salary_from"
+            class="form-control"
+            v-model="form.salary_from"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="salary_to" class="form-label">Зарплата до</label>
+          <input
+            type="number"
+            id="salary_to"
+            class="form-control"
+            v-model="form.salary_to"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="currency" class="form-label">Валюта</label>
+          <input
+            type="text"
+            id="currency"
+            class="form-control"
+            v-model="form.currency"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="employment_type" class="form-label">Тип занятости</label>
+          <select
+            id="employment_type"
+            class="form-select"
+            v-model="form.employment_type"
+          >
+            <option disabled value="">Выберите тип занятости</option>
+            <option value="full-time">Полная занятость</option>
+            <option value="part-time">Частичная занятость</option>
+            <option value="contract">Контракт</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="schedule" class="form-label">График работы</label>
+          <input
+            type="text"
+            id="schedule"
+            class="form-control"
+            v-model="form.schedule"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="key_skills" class="form-label">Ключевые навыки</label>
+          <input
+            type="text"
+            id="key_skills"
+            class="form-control"
+            v-model="form.key_skills"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="experience" class="form-label">Опыт работы</label>
+          <input
+            type="text"
+            id="experience"
+            class="form-control"
+            v-model="form.experience"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="address" class="form-label">Адрес</label>
+          <input
+            type="text"
+            id="address"
+            class="form-control"
+            v-model="form.address"
+          />
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+      </form>
+      <!-- Кнопка удаления вакансии -->
+      <div class="mt-4">
+        <button @click="deleteJob" class="btn btn-danger">Удалить вакансию</button>
       </div>
-      <!-- Описание вакансии -->
-      <div>
-        <label for="description">Описание:</label>
-        <textarea v-model="form.description" required></textarea>
-      </div>
-      <!-- Регион вакансии -->
-      <div>
-        <label for="region_id">Регион:</label>
-        <select v-model="form.region_id" required>
-          <option v-for="area in areas" :key="area.id" :value="area.id">
-            {{ area.name }}
-          </option>
-        </select>
-      </div>
-      <!-- Кнопка сохранения -->
-      <button type="submit">Сохранить изменения</button>
-    </form>
-
-    <!-- Сообщение об ошибке, если есть -->
-    <div v-if="error" class="error">{{ error }}</div>
-  </div>
+    </div>
+  </section>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
-import { Inertia } from "@inertiajs/inertia"; // Импортируем Inertia
+<script>
+import axios from 'axios';
 
-const props = defineProps({
-  job: Object, // Получаем данные о вакансии
-});
-
-// Инициализация формы с данными вакансии
-const form = ref({
-  title: props.job.title || "",
-  description: props.job.description || "",
-  region_id: props.job.region_id || null,
-});
-
-const areas = ref([]); // Массив для регионов
-const error = ref(null); // Состояние для ошибок
-
-// Функция загрузки регионов
-const fetchAreas = async () => {
-  try {
-    const response = await fetch("/api/areas");
-    if (!response.ok) {
-      throw new Error(`Ошибка при загрузке регионов: ${response.status}`);
-    }
-    const data = await response.json();
-    areas.value = data;
-  } catch (err) {
-    console.error(err);
-    error.value = "Не удалось загрузить регионы."; // Установка ошибки
-  }
-};
-
-// Вызов загрузки регионов при монтировании компонента
-onMounted(fetchAreas);
-
-// Функция обновления вакансии
-const updateJob = async () => {
-  // Сброс ошибок перед отправкой
-  error.value = null;
-
-  try {
-    await Inertia.put(`/api/jobs/${props.job.id}`, form.value, {
-      onError: (errors) => {
-        // Обработка ошибок валидации с сервера
-        error.value = errors.message || "Ошибка при обновлении вакансии.";
+export default {
+  props: {
+    job: Object, // Получаем объект вакансии
+    regions: Array, // Получаем список регионов
+  },
+  data() {
+    return {
+      form: {
+        title: this.job.title,
+        description: this.job.description,
+        region_id: this.job.region_id,
+        company_name: this.job.company_name,
+        salary_from: this.job.salary_from,
+        salary_to: this.job.salary_to,
+        currency: this.job.currency,
+        employment_type: this.job.employment_type,
+        schedule: this.job.schedule,
+        key_skills: this.job.key_skills,
+        experience: this.job.experience,
+        address: this.job.address,
       },
-      onSuccess: () => {
-        error.value = null; // Очистка ошибок после успешного обновления
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    error.value = "Не удалось обновить вакансию."; // Обработка ошибки запроса
-  }
+    };
+  },
+  methods: {
+    async updateJob() {
+      try {
+        await this.$inertia.put(`/jobs/${this.job.api_id}`, this.form);
+        this.$inertia.visit('/jobs'); // Переход к списку вакансий после успешного обновления
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async deleteJob() {
+      if (confirm('Вы уверены, что хотите удалить эту вакансию?')) {
+        try {
+          await axios.delete(`/api/jobs/${this.job.api_id}`);
+          this.$inertia.visit('/jobs'); // Переход к списку вакансий после удаления
+        } catch (error) {
+          console.error('Ошибка при удалении вакансии:', error);
+          alert('Не удалось удалить вакансию. Попробуйте еще раз.');
+        }
+      }
+    },
+  },
 };
 </script>
 
-<style>
-.error {
-  color: red; /* Стили для отображения ошибок */
-}
+<style scoped>
+/* Добавьте свои стили, если нужно */
 </style>

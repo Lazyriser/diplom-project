@@ -36,8 +36,16 @@ const fetchVacancies = async () => {
       throw new Error(`Ошибка: ${response.status}`);
     }
     const data = await response.json();
-    vacancies.value = data.items;
+
+    // Выводим все вакансии для проверки
+    console.log(data.items); // Отладочный вывод
+
+    // Фильтруем вакансии, исключая удалённые
+    vacancies.value = data.items.filter((vacancy) => !vacancy.deleted_at);
     totalPages.value = data.pages;
+
+    // Выводим отфильтрованные вакансии для проверки
+    console.log(vacancies.value); // Отладочный вывод
   } catch (error) {
     console.error("Ошибка при загрузке вакансий:", error);
   } finally {
@@ -143,12 +151,6 @@ const nextPage = () => {
               <button @click.prevent="editJob(vacancy.id)" :disabled="loading">
                 Редактировать
               </button>
-              <button
-                @click.prevent="deleteJob(vacancy.id)"
-                :disabled="loading"
-              >
-                Удалить
-              </button>
               <p v-if="vacancy.salary">
                 {{ vacancy.salary.from || "Не указано" }} руб. -
                 {{ vacancy.salary.to || "Не указано" }} руб.
@@ -156,7 +158,12 @@ const nextPage = () => {
               <p class="small">
                 {{ vacancy.employment?.name || "Тип занятости не указан" }}
               </p>
-              <a :href="vacancy.url" class="btn btn-primary">Посмотреть</a>
+              <a :href="`/jobs/${vacancy.id}`" class="btn btn-primary"
+                >Посмотреть</a
+              >
+              <a :href="vacancy.url" target="_blank" class="btn btn-primary"
+                >API</a
+              >
             </li>
           </ul>
           <p v-else>Нет вакансий для отображения.</p>
