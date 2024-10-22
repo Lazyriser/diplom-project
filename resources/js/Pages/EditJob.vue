@@ -1,5 +1,4 @@
 <template>
-  <!-- Шаблон для редактирования вакансии -->
   <div class="container mt-5">
     <h1>Редактировать вакансию</h1>
     <form @submit.prevent="submitForm">
@@ -164,7 +163,7 @@ const props = defineProps({
 });
 
 const form = ref({
-  api_id: props.job?.api_id || "", // api_id используется для обновления
+  api_id: props.job?.api_id || "",
   title: props.job?.title || "",
   description: props.job?.description || "",
   region_id: props.job?.region_id || null,
@@ -228,6 +227,5 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
-
+/* Добавьте свои стили, если нужно */
 </style>
-

@@ -1,9 +1,9 @@
-import '../css/app.css'; // Подключаем стили из app.css
-import './bootstrap'; // Подключаем настройки bootstrap
-import 'bootstrap/dist/css/bootstrap.min.css'; // Подключаем стили Bootstrap
-import 'bootstrap'; // Подключаем функционал Bootstrap (JS)
+import '../css/app.css';
+import './bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css'; // Оставляем подключение стилей Bootstrap
+import 'bootstrap'; // Подключение функционала Bootstrap (JS)
 import '../css/app.scss'; // Подключаем кастомные стили через SASS
-import axios from 'axios'; // Импортируем библиотеку axios для HTTP-запросов
+import axios from 'axios';
 
 // Получаем CSRF-токен из мета-тега
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -11,28 +11,27 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute
 // Устанавливаем CSRF-токен в заголовки по умолчанию для Axios
 axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 
-import { createInertiaApp } from '@inertiajs/vue3'; // Импортируем функцию для создания Inertia приложения
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'; // Импортируем вспомогательную функцию для резолвинга компонентов
-import { createApp, h } from 'vue'; // Импортируем функции из Vue для создания приложения
-import { ZiggyVue } from '../../vendor/tightenco/ziggy'; // Импортируем ZiggyVue для маршрутизации
+import { createInertiaApp } from '@inertiajs/vue3';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { createApp, h } from 'vue';
+import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel'; // Получаем имя приложения из переменных окружения
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
-	title: (title) => `${title} - ${appName}`, // Устанавливаем заголовок окна браузера
+	title: (title) => `${title} - ${appName}`,
 	resolve: (name) =>
 		resolvePageComponent(
-			`./Pages/${name}.vue`, // Путь до компонента страницы
-			import.meta.glob('./Pages/**/*.vue'), // Глобальная импорт всех .vue файлов в папке Pages
+			`./Pages/${name}.vue`,
+			import.meta.glob('./Pages/**/*.vue'),
 		),
-	setup({ el, App, props, plugin }) { // Настраиваем приложение
-		return createApp({ render: () => h(App, props) }) // Создаем Vue-приложение и рендерим App
-			.use(plugin) // Используем переданный плагин
-			.use(ZiggyVue) // Используем ZiggyVue
-			.mount(el); // Монтируем приложение в элемент el
+	setup({ el, App, props, plugin }) {
+		return createApp({ render: () => h(App, props) })
+			.use(plugin)
+			.use(ZiggyVue)
+			.mount(el);
 	},
 	progress: {
-		color: '#4B5563', // Устанавливаем цвет индикатора загрузки
+		color: '#4B5563',
 	},
 });
-

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\JobService;
 use App\Models\Job;
+use App\Models\Region;
 
 class UpdateJobsCommand extends Command
 {
@@ -27,7 +28,7 @@ class UpdateJobsCommand extends Command
 
 		if (isset($regions['items']) && is_array($regions['items'])) {
 			foreach ($regions['items'] as $region) {
-				\App\Models\Region::updateOrCreate(
+				Region::updateOrCreate(
 					['api_id' => $region['id']],
 					['name' => $region['name']]
 				);
@@ -37,51 +38,59 @@ class UpdateJobsCommand extends Command
 		}
 
 		$this->info('Обновляем вакансии');
-		// Обновляем вакансии
+		// Получаем все регионы из базы данных
+		$regions = Region::all();
+
 		$page = 0; // Начальная страница
 		$perPage = 100; // Количество вакансий на странице
 		$totalVacancies = 0;
 
-		do {
-			$vacanciesData = $this->jobService->getVacancies('php', null, $page, $perPage); // Добавьте нужные параметры
+		// Проходим по каждому региону
+		foreach ($regions as $region) {
+			$this->info("Обновляем вакансии для региона: {$region->name}");
 
-			if (isset($vacanciesData['items']) && is_array($vacanciesData['items'])) {
-				foreach ($vacanciesData['items'] as $vacancy) {
-					$fullVacancyDataResult = $this->jobService->getFullVacancyData($vacancy['id']);
-					$fullVacancyData = $fullVacancyDataResult['data'];
+			do {
+				// Передаем идентификатор региона в метод getVacancies
+				$vacanciesData = $this->jobService->getVacancies('php', $region->api_id, $page, $perPage);
 
-					$key_skills = isset($fullVacancyData['key_skills'])
-						? implode(', ', array_column($fullVacancyData['key_skills'], 'name'))
-						: null;
+				if (isset($vacanciesData['items']) && is_array($vacanciesData['items'])) {
+					foreach ($vacanciesData['items'] as $vacancy) {
+						$fullVacancyDataResult = $this->jobService->getFullVacancyData($vacancy['id']);
+						$fullVacancyData = $fullVacancyDataResult['data'];
 
-					Job::updateOrCreate(
-						['api_id' => $vacancy['id']],
-						[
-							'title' => $vacancy['name'] ?? null,
-							'description' => $fullVacancyData['description'] ?? '',
-							'region_id' => $vacancy['area']['id'] ?? null,
-							'salary_from' => $vacancy['salary']['from'] ?? null,
-							'salary_to' => $vacancy['salary']['to'] ?? null,
-							'currency' => $vacancy['salary']['currency'] ?? null,
-							'company_name' => $vacancy['employer']['name'] ?? null,
-							'schedule' => $vacancy['schedule']['name'] ?? null,
-							'key_skills' => $key_skills,
-							'address' => $vacancy['address']['raw'] ?? null,
-							'experience' => $vacancy['experience']['name'] ?? null,
-							'employment_type' => $vacancy['employment']['name'] ?? null,
-							'is_updated' => true,
-						]
-					);
+						$key_skills = isset($fullVacancyData['key_skills'])
+							? implode(', ', array_column($fullVacancyData['key_skills'], 'name'))
+							: null;
 
-					$totalVacancies++;
+						Job::updateOrCreate(
+							['api_id' => $vacancy['id']],
+							[
+								'title' => $vacancy['name'] ?? null,
+								'description' => $fullVacancyData['description'] ?? '',
+								'region_id' => $region->id, // Используем ID региона из базы
+								'salary_from' => $vacancy['salary']['from'] ?? null,
+								'salary_to' => $vacancy['salary']['to'] ?? null,
+								'currency' => $vacancy['salary']['currency'] ?? null,
+								'company_name' => $vacancy['employer']['name'] ?? null,
+								'schedule' => $vacancy['schedule']['name'] ?? null,
+								'key_skills' => $key_skills,
+								'address' => $vacancy['address']['raw'] ?? null,
+								'experience' => $vacancy['experience']['name'] ?? null,
+								'employment_type' => $vacancy['employment']['name'] ?? null,
+								'is_updated' => true,
+							]
+						);
+
+						$totalVacancies++;
+					}
+				} else {
+					$this->warn('Не удалось получить вакансии на странице ' . $page . '. Ответ API: ' . json_encode($vacanciesData));
+					break; // Выход из цикла, если данные не получены
 				}
-			} else {
-				$this->warn('Не удалось получить вакансии на странице ' . $page . '. Ответ API: ' . json_encode($vacanciesData));
-				break; // Выход из цикла, если данные не получены
-			}
 
-			$page++; // Переход к следующей странице
-		} while (count($vacanciesData['items']) === $perPage); // Продолжаем, пока есть вакансии на странице
+				$page++; // Переход к следующей странице
+			} while (count($vacanciesData['items']) === $perPage); // Продолжаем, пока есть вакансии на странице
+		}
 
 		$this->info("Вакансии и регионы успешно обновлены. Всего загружено вакансий: {$totalVacancies}");
 	}

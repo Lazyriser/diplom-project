@@ -60,7 +60,7 @@
                     </p>
                     <p class="small">
                       {{
-                        vacancy.employment_type || "Тип занятости не указан"
+                        vacancy.employment?.name || "Тип занятости не указан"
                       }}
                     </p>
                     <p v-html="truncateDescription(vacancy.description)"></p>
