@@ -25,6 +25,7 @@ return new class extends Migration {
 			$table->string('schedule')->nullable();
 			$table->text('key_skills')->nullable();
 			$table->string('employment_type')->nullable();
+			$table->boolean('is_updated')->default(false);
 			$table->softDeletes();
 			$table->timestamps();
 

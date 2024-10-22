@@ -1,3 +1,133 @@
+<template>
+  <div class="jobs py-5">
+    <!-- Навигационная панель с кнопками входа и регистрации -->
+    <nav class="navbar navbar-light bg-light mb-5">
+      <div class="container">
+        <a class="navbar-brand" href="/">Diplom</a>
+        <div class="d-flex">
+          <a href="/login" class="btn btn-outline-primary me-2">Вход</a>
+          <a href="/register" class="btn btn-outline-success">Регистрация</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Секция выбора региона -->
+    <section class="mb-5">
+      <div class="container">
+        <div class="row mb-3">
+          <h2 class="col text-center">Выберите регион</h2>
+        </div>
+        <div class="row justify-content-center">
+          <div class="col-md-6">
+            <select class="form-select" v-model="selectedRegion">
+              <option v-for="area in areas" :key="area.id" :value="area.id">
+                {{ area.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Секция вакансий -->
+    <section class="mb-5">
+      <div class="container">
+        <div class="row mb-3">
+          <h2 class="col text-center">Вакансии</h2>
+        </div>
+        <div class="row justify-content-center">
+          <div v-if="loading" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Загрузка...</span>
+            </div>
+          </div>
+          <div v-else>
+            <button @click="createNewJob" class="btn btn-primary mb-3">
+              Создать новую вакансию
+            </button>
+            <ul v-if="vacancies.length" class="list-group">
+              <li
+                v-for="vacancy in vacancies"
+                :key="vacancy.api_id"
+                class="list-group-item mb-3 p-4"
+              >
+                <div class="row">
+                  <div class="col-md-9">
+                    <h5>{{ vacancy.title }}</h5>
+                    <p v-if="vacancy.salary">
+                      Зарплата: {{ vacancy.salary.from || "Не указано" }} руб. -
+                      {{ vacancy.salary.to || "Не указано" }} руб.
+                    </p>
+                    <p class="small">
+                      {{
+                        vacancy.employment_type || "Тип занятости не указан"
+                      }}
+                    </p>
+                    <p v-html="truncateDescription(vacancy.description)"></p>
+                  </div>
+                  <div class="col-md-3 text-end">
+                    <button
+                      @click.prevent="editJob(vacancy.api_id)"
+                      class="btn btn-warning mb-2"
+                      :disabled="loading"
+                    >
+                      Редактировать
+                    </button>
+                    <button
+                      @click.prevent="deleteJob(vacancy.api_id)"
+                      class="btn btn-danger mb-2"
+                      :disabled="loading"
+                    >
+                      Удалить
+                    </button>
+                    <a
+                      :href="`/jobs/${vacancy.api_id}`"
+                      class="btn btn-info mb-2"
+                      >Посмотреть</a
+                    >
+                    <a
+                      :href="vacancy.url"
+                      target="_blank"
+                      class="btn btn-secondary"
+                      >API</a
+                    >
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <p v-else class="text-center">Нет вакансий для отображения.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Секция пагинации -->
+    <section class="pagination-section">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-md-6 text-center">
+            <button
+              class="btn btn-outline-secondary me-2"
+              @click.prevent="prevPage"
+              :disabled="currentPage.value === 1"
+            >
+              Предыдущая
+            </button>
+            <button
+              class="btn btn-outline-secondary"
+              @click.prevent="nextPage"
+              :disabled="currentPage.value >= totalPages.value"
+            >
+              Следующая
+            </button>
+            <p class="mt-3">Страница {{ currentPage }} из {{ totalPages }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+
 <script setup>
 import { ref, watch } from "vue";
 import { Inertia } from "@inertiajs/inertia";
@@ -6,7 +136,7 @@ import { Inertia } from "@inertiajs/inertia";
 const vacancies = ref([]);
 const areas = ref([]);
 const selectedRegion = ref(1);
-const currentPage = ref(1); // Начинаем с 1 страницы
+const currentPage = ref(1);
 const totalPages = ref(0);
 const vacanciesPerPage = ref(5);
 const loading = ref(false);
@@ -27,7 +157,7 @@ const fetchAreas = async () => {
 
 // Получение вакансий
 const fetchVacancies = async () => {
-  loading.value = true; // Установка состояния загрузки
+  loading.value = true;
   try {
     const response = await fetch(
       `/api/vacancies?region=${selectedRegion.value}&page=${currentPage.value}&per_page=${vacanciesPerPage.value}`
@@ -37,19 +167,26 @@ const fetchVacancies = async () => {
     }
     const data = await response.json();
 
-    // Выводим все вакансии для проверки
-    console.log(data.items); // Отладочный вывод
+    // Логируем полный ответ
+    console.log("Полученные данные от API:", data);
 
-    // Фильтруем вакансии, исключая удалённые
-    vacancies.value = data.items.filter((vacancy) => !vacancy.deleted_at);
-    totalPages.value = data.pages;
+    // Проверяем, существует ли data.data
+    if (!data.data) {
+      console.error("data не найдены в ответе API");
+      vacancies.value = []; // Устанавливаем пустой массив, если data нет
+      totalPages.value = 0; // Обнуляем количество страниц
+      return;
+    }
 
-    // Выводим отфильтрованные вакансии для проверки
-    console.log(vacancies.value); // Отладочный вывод
+    // Фильтруем вакансии
+    vacancies.value = data.data.filter((vacancy) => !vacancy.deleted_at);
+
+    // Устанавливаем количество страниц
+    totalPages.value = data.last_page || 0; // Убедитесь, что last_page существует
   } catch (error) {
     console.error("Ошибка при загрузке вакансий:", error);
   } finally {
-    loading.value = false; // Сброс состояния загрузки
+    loading.value = false;
   }
 };
 
@@ -59,7 +196,6 @@ const createNewJob = () => {
 };
 
 const editJob = (id) => {
-  console.log(`Редактирование вакансии с ID: ${id}`); // Отладочный вывод
   Inertia.visit(`/jobs/${id}/edit`);
 };
 
@@ -76,23 +212,39 @@ const deleteJob = async (id) => {
             .getAttribute("content"),
         },
       });
+
       if (!response.ok) {
         throw new Error("Ошибка при удалении вакансии");
       }
-      await fetchVacancies(); // Обновление списка вакансий после удаления
+
+      vacancies.value = vacancies.value.filter(
+        (vacancy) => vacancy.api_id !== id
+      );
     } catch (error) {
       console.error("Ошибка при удалении вакансии:", error);
     }
   }
 };
 
+const truncateDescription = (description) => {
+  if (!description) return "Описание не указано";
+
+  // Убираем HTML-теги
+  const strippedDescription = description.replace(/<[^>]*>/g, "");
+
+  // Сокращаем до 150 символов и добавляем многоточие, если нужно
+  return strippedDescription.length > 150
+    ? strippedDescription.substring(0, 150) + "..."
+    : strippedDescription;
+};
+
 // Наблюдатели за изменениями
 watch(selectedRegion, () => {
-  currentPage.value = 1; // Сброс текущей страницы при смене региона
-  fetchVacancies(); // Вызываем обновление вакансий
+  currentPage.value = 1;
+  fetchVacancies();
 });
 
-watch(currentPage, fetchVacancies); // При смене страницы вызываем обновление вакансий
+watch(currentPage, fetchVacancies);
 
 // Первоначальная загрузка данных
 fetchAreas();
@@ -112,84 +264,23 @@ const nextPage = () => {
 };
 </script>
 
-<template>
-  <div class="jobs">
-    <!-- Секция выбора региона -->
-    <section class="mb-5">
-      <div class="container">
-        <div class="row">
-          <h2>Выберите регион</h2>
-        </div>
-        <div class="row">
-          <select class="form-select" v-model="selectedRegion">
-            <option v-for="area in areas" :key="area.id" :value="area.id">
-              {{ area.name }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </section>
+<style scoped>
+.jobs {
+  background-color: #f9f9f9;
+}
 
-    <!-- Секция вакансий -->
-    <section>
-      <div class="container">
-        <div class="row">
-          <h2>Вакансии</h2>
-          <div v-if="loading">Загрузка...</div>
-        </div>
-        <div class="row">
-          <button @click="createNewJob" class="btn btn-primary">
-            Создать новую вакансию
-          </button>
-          <ul v-if="vacancies.length">
-            <li
-              v-for="vacancy in vacancies"
-              :key="vacancy.id"
-              class="p-3 mb-3 border"
-            >
-              <p>{{ vacancy.name }}</p>
-              <button @click.prevent="editJob(vacancy.id)" :disabled="loading">
-                Редактировать
-              </button>
-              <p v-if="vacancy.salary">
-                {{ vacancy.salary.from || "Не указано" }} руб. -
-                {{ vacancy.salary.to || "Не указано" }} руб.
-              </p>
-              <p class="small">
-                {{ vacancy.employment?.name || "Тип занятости не указан" }}
-              </p>
-              <a :href="`/jobs/${vacancy.id}`" class="btn btn-primary"
-                >Посмотреть</a
-              >
-              <a :href="vacancy.url" target="_blank" class="btn btn-primary"
-                >API</a
-              >
-            </li>
-          </ul>
-          <p v-else>Нет вакансий для отображения.</p>
-        </div>
-      </div>
-    </section>
+.list-group-item {
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-    <!-- Секция пагинации -->
-    <section>
-      <div class="container">
-        <button
-          class="btn btn-secondary"
-          @click.prevent="prevPage"
-          :disabled="currentPage.value === 1"
-        >
-          Предыдущая
-        </button>
-        <button
-          class="btn btn-secondary"
-          @click.prevent="nextPage"
-          :disabled="currentPage.value >= totalPages.value"
-        >
-          Следующая
-        </button>
-        <p>Страница {{ currentPage }} из {{ totalPages }}</p>
-      </div>
-    </section>
-  </div>
-</template>
+.pagination-section {
+  background-color: #e9ecef;
+  padding: 20px 0;
+}
+
+.btn {
+  min-width: 120px;
+}
+</style>

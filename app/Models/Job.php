@@ -6,10 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Модель вакансии
+ */
 class Job extends Model
 {
 	use HasFactory, SoftDeletes; // Используем трейты
 
+	/**
+	 * Колонки, доступные для записи
+	 * @var array
+	 */
 	protected $fillable = [
 		'api_id',
 		'title',
@@ -25,17 +32,26 @@ class Job extends Model
 		'address',
 		'currency',
 		'deleted_at',
+		'is_updated',
 	];
 
-	protected $table = 'vacancies'; // Явное указание имени таблицы
+	/**
+	 * Явное указание имени таблицы
+	 * @var string
+	 */
+	protected $table = 'vacancies';
 
-	// Отношение к модели Region
+	/**
+	 * Отношение к модели Region
+	 */
 	public function region()
 	{
 		return $this->belongsTo(Region::class);
 	}
 
-	// Форматирование зарплаты
+	/**
+	 * Форматирование зарплаты
+	 */
 	public function getFormattedSalaryAttribute()
 	{
 		// Если зарплата задана, форматируем ее
@@ -44,13 +60,17 @@ class Job extends Model
 			: 'Не указана'; // Возвращаем текст, если зарплата не указана
 	}
 
-	// Имя региона
+	/**
+	 * Имя региона
+	 */
 	public function getRegionNameAttribute()
 	{
 		return $this->region ? $this->region->name : 'Не указан'; // Имя региона
 	}
 
-	// Валидация данных для создания/обновления вакансии
+	/**
+	 * Валидация данных для создания/обновления вакансии
+	 */
 	public static function rules($ignoreApiId = null)
 	{
 		return [
@@ -72,3 +92,4 @@ class Job extends Model
 		];
 	}
 }
+

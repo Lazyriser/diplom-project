@@ -9,14 +9,19 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 
 // Главная страница
+// Route::get('/', function () {
+// 	return Inertia::render('Home', [
+// 		'canLogin' => Route::has('login'),
+// 		'canRegister' => Route::has('register'),
+// 		'laravelVersion' => Application::VERSION,
+// 		'phpVersion' => PHP_VERSION,
+// 	]);
+// });
+
+// Главная страница
 Route::get('/', function () {
-	return Inertia::render('Home', [
-		'canLogin' => Route::has('login'),
-		'canRegister' => Route::has('register'),
-		'laravelVersion' => Application::VERSION,
-		'phpVersion' => PHP_VERSION,
-	]);
-});
+	return Inertia::render('JobList');
+})->name('jobs.index');
 
 // Маршруты аутентификации
 Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -24,12 +29,7 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
 Route::post('/register', [RegisteredUserController::class, 'store']);
 
-// Список вакансий (веб маршрут)
-Route::get('/jobs', function () {
-	return Inertia::render('JobList');
-})->name('jobs.index');
-
-// Защищенные маршруты для редактирования, создания и просмотра вакансий
+// Защищенные маршруты для вакансий
 Route::middleware(['auth'])->group(function () {
 	Route::get('/jobs/create', function () {
 		return Inertia::render('CreateJob'); // Обработка создания вакансии
@@ -37,9 +37,8 @@ Route::middleware(['auth'])->group(function () {
 
 	Route::get('/jobs/{id}', [JobController::class, 'show'])->name('jobs.show');
 
-	Route::get('/jobs/{id}/edit', function ($id) {
-		return Inertia::render('EditJob', ['id' => $id]); // Обработка редактирования вакансии
-	})->name('jobs.edit');
+	Route::get('/jobs/{id}/edit', [JobController::class, 'edit'])->name('jobs.edit');
+	Route::put('/jobs/{id}', [JobController::class, 'update'])->name('jobs.update');
 });
 
 // Страница дашборда
@@ -66,6 +65,3 @@ Route::prefix('api')->group(function () {
 		'destroy' => 'api.jobs.destroy', // Для удаления вакансии
 	]);
 });
-
-
-Route::get('/jobs/{id}/edit', [JobController::class, 'edit'])->name('jobs.edit');

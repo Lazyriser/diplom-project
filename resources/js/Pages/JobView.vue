@@ -34,9 +34,9 @@
         </div>
       </div>
       <!-- Кнопка удаления вакансии -->
-      <div class="mt-4">
+      <!-- <div class="mt-4">
         <button @click="deleteJob(job.api_id)" class="btn btn-danger">Удалить вакансию</button>
-      </div>
+      </div> -->
       <!-- Кнопка возврата на список вакансий -->
       <div class="mt-4">
         <a href="/jobs" class="btn btn-primary">Вернуться к списку вакансий</a>
